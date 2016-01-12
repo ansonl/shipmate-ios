@@ -7,10 +7,12 @@
 //
 
 #import <Foundation/Foundation.h>
+#import "MainViewController.h"
 
 @interface ShipmateNetwork : NSObject
 
-
-+ (void)loadShipmate;
++ (BOOL)newPickup:(int)phoneNumber withLocation:(CGPoint)location withSender:(MainViewController *)sender;
++ (int)getPickupInfo:(int)phoneNumber withLocation:(CGPoint)location withSender:(MainViewController *)sender;
++ (BOOL)cancelPickup:(int)phoneNumber withSender:(MainViewController *)sender;
 
 @end
