@@ -7,8 +7,10 @@
 //
 
 #import <UIKit/UIKit.h>
+#import <CoreLocation/CoreLocation.h>
+@import MapKit;
 
-@interface MainViewController : UIViewController
+@interface MainViewController : UIViewController <CLLocationManagerDelegate, MKMapViewDelegate>
 
 //- (void)callShipmate;
 

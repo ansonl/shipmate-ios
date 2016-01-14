@@ -14,5 +14,6 @@
 + (BOOL)newPickup:(int)phoneNumber withLocation:(CGPoint)location withSender:(MainViewController *)sender;
 + (int)getPickupInfo:(int)phoneNumber withLocation:(CGPoint)location withSender:(MainViewController *)sender;
 + (BOOL)cancelPickup:(int)phoneNumber withSender:(MainViewController *)sender;
++ (NSArray *)getVanLocations;
 
 @end

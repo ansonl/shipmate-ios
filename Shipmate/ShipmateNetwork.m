@@ -10,10 +10,11 @@
 
 @implementation ShipmateNetwork 
 
-NSString *const kBaseServer = @"http://127.0.0.1:8080";
+NSString *const kBaseServer = @"http://192.168.1.167:8080";
 NSString *const kNewPickup = @"/newPickup";
 NSString *const kGetPickupInfo = @"/getPickupInfo";
 NSString *const kCancelPickup = @"/cancelPickup";
+NSString *const kGetVanLocations = @"/getVanLocations";
 
 
 + (BOOL)newPickup:(int)phoneNumber withLocation:(CGPoint)location withSender:(MainViewController *)sender {
@@ -23,7 +24,7 @@ NSString *const kCancelPickup = @"/cancelPickup";
                                                        timeoutInterval:30.0];
     
     [request setHTTPMethod:@"POST"];
-    NSString *postString = [NSString stringWithFormat:@"phoneNumber=%d&latitude=%f&longitude=%f", phoneNumber, location.x, location.y];
+    NSString *postString = [NSString stringWithFormat:@"phoneNumber=%d&latitude=%f&longitude=%f&phrase=%@", phoneNumber, location.x, location.y, [[[UIDevice currentDevice] identifierForVendor] UUIDString]];
     [request setHTTPBody:[postString dataUsingEncoding:NSUTF8StringEncoding]];
     
     NSError * __block sharedError = nil;
@@ -70,29 +71,13 @@ NSString *const kCancelPickup = @"/cancelPickup";
 }
 
 + (int)getPickupInfo:(int)phoneNumber withLocation:(CGPoint)location withSender:(MainViewController *)sender{
-    /*
-    NSURL *aUrl = [NSURL URLWithString:[NSString stringWithFormat:@"%@%@",baseServer, newPickup]];
-    NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:aUrl
-                                                           cachePolicy:NSURLRequestReloadIgnoringCacheData
-                                                       timeoutInterval:30.0];
-    
-    [request setHTTPMethod:@"POST"];
-    NSString *postString = [NSString stringWithFormat:@"%@%@?phoneNumber=%d",baseServer, newPickup, phoneNumber];
-    [request setHTTPBody:[postString dataUsingEncoding:NSUTF8StringEncoding]];
-    
-    NSURLConnection *connection= [[NSURLConnection alloc] initWithRequest:request
-                                                                 delegate:self];
-    
-    return true;
-     */
-    
     NSURL *aUrl = [NSURL URLWithString:[NSString stringWithFormat:@"%@%@",kBaseServer, kGetPickupInfo]];
     NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:aUrl
                                                            cachePolicy:NSURLRequestReloadIgnoringCacheData
                                                        timeoutInterval:30.0];
     
     [request setHTTPMethod:@"POST"];
-    NSString *postString = [NSString stringWithFormat:@"phoneNumber=%d&latitude=%f&longitude=%f", phoneNumber, location.x, location.y];
+    NSString *postString = [NSString stringWithFormat:@"phoneNumber=%d&latitude=%f&longitude=%f&phrase=%@", phoneNumber, location.x, location.y, [[[UIDevice currentDevice] identifierForVendor] UUIDString]];
     [request setHTTPBody:[postString dataUsingEncoding:NSUTF8StringEncoding]];
     
     NSError * __block sharedError = nil;
@@ -142,19 +127,18 @@ NSString *const kCancelPickup = @"/cancelPickup";
                                                        timeoutInterval:30.0];
     
     [request setHTTPMethod:@"POST"];
-    NSString *postString = [NSString stringWithFormat:@"phoneNumber=%d", phoneNumber];
+    NSString *postString = [NSString stringWithFormat:@"phoneNumber=%d&phrase=%@", phoneNumber, [[[UIDevice currentDevice] identifierForVendor] UUIDString]];
     [request setHTTPBody:[postString dataUsingEncoding:NSUTF8StringEncoding]];
     
-    NSError *sharedError = nil;
-    void (^copyError)(NSError *errorRef, NSError *newErrorRef) = ^void(NSError *errorRef, NSError *newErrorRef) {
-        errorRef = newErrorRef;
-    };
+    NSError * __block sharedError = nil;
+    NSData * __block sharedData = nil;
     
     dispatch_semaphore_t semaphore = dispatch_semaphore_create(0);
     NSURLSession *session = [NSURLSession sharedSession];
     NSURLSessionDataTask *dataTask = [session dataTaskWithRequest:request
                                                 completionHandler:^(NSData *data, NSURLResponse *response, NSError *error) {
-                                                    copyError(sharedError, error);
+                                                    sharedError = error;
+                                                    sharedData = data;
                                                     dispatch_semaphore_signal(semaphore);
                                                 }];
     [dataTask resume];
@@ -165,8 +149,84 @@ NSString *const kCancelPickup = @"/cancelPickup";
         NSLog(@"%@", sharedError);
         return NO;
     }
+    
+    if (sharedData == nil) {
+        NSLog(@"No data returned.");
+        return NO;
+    }
+    
+    NSError *parseError = nil;
+    NSDictionary *output = [NSJSONSerialization JSONObjectWithData:sharedData options:0 error:&parseError];
+    if (![output isKindOfClass:[NSDictionary class]]) {
+        NSLog(@"Returned data not a JSON dict at root. %@", output);
+        return NO;
+    }
+    
+    if (![[output allKeys] containsObject:@"status"]) {
+        NSLog(@"No status key in returned data. %@", output);
+        return NO;
+    }
+    
+    if ([[output objectForKey:@"status"] intValue] != 0) {
+        return NO;
+    }
+    
     return YES;
+}
 
++ (NSArray *)getVanLocations {
+    NSURL *aUrl = [NSURL URLWithString:[NSString stringWithFormat:@"%@%@",kBaseServer, kGetVanLocations]];
+    NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:aUrl
+                                                           cachePolicy:NSURLRequestReloadIgnoringCacheData
+                                                       timeoutInterval:30.0];
+    
+    [request setHTTPMethod:@"GET"];
+    
+    NSError * __block sharedError = nil;
+    NSData * __block sharedData = nil;
+    
+    dispatch_semaphore_t semaphore = dispatch_semaphore_create(0);
+    NSURLSession *session = [NSURLSession sharedSession];
+    NSURLSessionDataTask *dataTask = [session dataTaskWithRequest:request
+                                                completionHandler:^(NSData *data, NSURLResponse *response, NSError *error) {
+                                                    sharedError = error;
+                                                    sharedData = data;
+                                                    dispatch_semaphore_signal(semaphore);
+                                                }];
+    [dataTask resume];
+    
+    dispatch_semaphore_wait(semaphore, DISPATCH_TIME_FOREVER);
+    
+    if (sharedError != nil) {
+        NSLog(@"%@", sharedError);
+        return nil;
+    }
+    
+    if (sharedData == nil) {
+        NSLog(@"No data returned.");
+        return nil;
+    }
+    
+    NSError *parseError = nil;
+    NSArray *output = [NSJSONSerialization JSONObjectWithData:sharedData options:0 error:&parseError];
+    if (![output isKindOfClass:[NSArray class]]) {
+        NSLog(@"Returned data not a JSON array at root. %@", output);
+        return nil;
+    }
+    
+    NSMutableArray *mutableOutput = [[NSMutableArray alloc] initWithArray:output];
+    
+    for (int i = 0; i < [mutableOutput count]; i++) {
+        if (![mutableOutput[i] isKindOfClass:[NSDictionary class]])
+            return nil;
+        if (![[mutableOutput[i] allKeys] containsObject:@"latitude"] || ![[mutableOutput[i] allKeys] containsObject:@"longitude"])
+            return nil;
+        if ([[mutableOutput[i] objectForKey:@"latitude"] doubleValue] == 0 && [[mutableOutput[i] objectForKey:@"longitude"] doubleValue] == 0) {
+            [mutableOutput removeObjectAtIndex:i];
+            i--;
+        }
+    }
+    return output;
 }
 
 @end

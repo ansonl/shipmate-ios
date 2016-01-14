@@ -7,9 +7,10 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		28D0DE441C45F33C002C1B62 /* CoreLocation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 28D0DE431C45F33C002C1B62 /* CoreLocation.framework */; };
+		28D0DE4A1C46E6FE002C1B62 /* VanAnnotation.m in Sources */ = {isa = PBXBuildFile; fileRef = 28D0DE491C46E6FE002C1B62 /* VanAnnotation.m */; };
 		28D44BD91C3E1359002D9162 /* MainViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 28D44BD81C3E1359002D9162 /* MainViewController.m */; };
 		28D44BDB1C41F815002D9162 /* MapKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 28D44BDA1C41F815002D9162 /* MapKit.framework */; };
-		28D44BDE1C42011E002D9162 /* MapLayoutGuide.m in Sources */ = {isa = PBXBuildFile; fileRef = 28D44BDD1C42011E002D9162 /* MapLayoutGuide.m */; };
 		28D44BE11C420A35002D9162 /* ShipmateNetwork.m in Sources */ = {isa = PBXBuildFile; fileRef = 28D44BE01C420A35002D9162 /* ShipmateNetwork.m */; };
 		28E205321C39BC2B00CD47D5 /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = 28E205311C39BC2B00CD47D5 /* main.m */; };
 		28E205351C39BC2B00CD47D5 /* AppDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = 28E205341C39BC2B00CD47D5 /* AppDelegate.m */; };
@@ -19,11 +20,12 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		28D0DE431C45F33C002C1B62 /* CoreLocation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreLocation.framework; path = System/Library/Frameworks/CoreLocation.framework; sourceTree = SDKROOT; };
+		28D0DE481C46E6FE002C1B62 /* VanAnnotation.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = VanAnnotation.h; sourceTree = "<group>"; };
+		28D0DE491C46E6FE002C1B62 /* VanAnnotation.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = VanAnnotation.m; sourceTree = "<group>"; };
 		28D44BD71C3E1359002D9162 /* MainViewController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = MainViewController.h; sourceTree = "<group>"; };
 		28D44BD81C3E1359002D9162 /* MainViewController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = MainViewController.m; sourceTree = "<group>"; };
 		28D44BDA1C41F815002D9162 /* MapKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = MapKit.framework; path = System/Library/Frameworks/MapKit.framework; sourceTree = SDKROOT; };
-		28D44BDC1C42011E002D9162 /* MapLayoutGuide.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = MapLayoutGuide.h; sourceTree = "<group>"; };
-		28D44BDD1C42011E002D9162 /* MapLayoutGuide.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = MapLayoutGuide.m; sourceTree = "<group>"; };
 		28D44BDF1C420A35002D9162 /* ShipmateNetwork.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ShipmateNetwork.h; sourceTree = "<group>"; };
 		28D44BE01C420A35002D9162 /* ShipmateNetwork.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = ShipmateNetwork.m; sourceTree = "<group>"; };
 		28E2052D1C39BC2B00CD47D5 /* Shipmate.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Shipmate.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -41,6 +43,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				28D0DE441C45F33C002C1B62 /* CoreLocation.framework in Frameworks */,
 				28D44BDB1C41F815002D9162 /* MapKit.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -51,6 +54,7 @@
 		28E205241C39BC2B00CD47D5 = {
 			isa = PBXGroup;
 			children = (
+				28D0DE431C45F33C002C1B62 /* CoreLocation.framework */,
 				28D44BDA1C41F815002D9162 /* MapKit.framework */,
 				28E2052F1C39BC2B00CD47D5 /* Shipmate */,
 				28E2052E1C39BC2B00CD47D5 /* Products */,
@@ -72,10 +76,10 @@
 				28E205341C39BC2B00CD47D5 /* AppDelegate.m */,
 				28D44BD71C3E1359002D9162 /* MainViewController.h */,
 				28D44BD81C3E1359002D9162 /* MainViewController.m */,
+				28D0DE481C46E6FE002C1B62 /* VanAnnotation.h */,
+				28D0DE491C46E6FE002C1B62 /* VanAnnotation.m */,
 				28D44BDF1C420A35002D9162 /* ShipmateNetwork.h */,
 				28D44BE01C420A35002D9162 /* ShipmateNetwork.m */,
-				28D44BDC1C42011E002D9162 /* MapLayoutGuide.h */,
-				28D44BDD1C42011E002D9162 /* MapLayoutGuide.m */,
 				28E205391C39BC2B00CD47D5 /* Main.storyboard */,
 				28E2053C1C39BC2B00CD47D5 /* Assets.xcassets */,
 				28E2053E1C39BC2B00CD47D5 /* LaunchScreen.storyboard */,
@@ -169,9 +173,9 @@
 			buildActionMask = 2147483647;
 			files = (
 				28E205351C39BC2B00CD47D5 /* AppDelegate.m in Sources */,
-				28D44BDE1C42011E002D9162 /* MapLayoutGuide.m in Sources */,
 				28D44BD91C3E1359002D9162 /* MainViewController.m in Sources */,
 				28E205321C39BC2B00CD47D5 /* main.m in Sources */,
+				28D0DE4A1C46E6FE002C1B62 /* VanAnnotation.m in Sources */,
 				28D44BE11C420A35002D9162 /* ShipmateNetwork.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
