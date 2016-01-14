@@ -98,14 +98,13 @@ BOOL centeredOnLocation = NO;
             vanAnnotationView.annotation = annotation;
         
         [vanAnnotationView setCanShowCallout:YES];
-        UIImage *originalImage = [UIImage imageNamed:@"vanTop"];
+        UIImage *originalImage = [UIImage imageNamed:@"vanFront"];
         
         CGSize size = CGSizeApplyAffineTransform(originalImage.size, CGAffineTransformMakeScale(0.1, 0.1));
         CGFloat scale = 0.0; // Automatically use scale factor of main screen
         
         UIGraphicsBeginImageContextWithOptions(size, NO, scale);
         [originalImage drawInRect:CGRectMake(CGPointZero.x, CGPointZero.y, size.width, size.height)];
-        
         UIImage *scaledImage = UIGraphicsGetImageFromCurrentImageContext();
         UIGraphicsEndImageContext();
         
