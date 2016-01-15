@@ -3,7 +3,7 @@
 <plist version="1.0">
 <dict>
 	<key>NSLocationAlwaysUsageDescription</key>
-	<string>Let SHIPMATE get your location when requesting a pickup and switch to use another app.</string>
+	<string>Let SHIPMATE get your location when requesting a pickup and if you switch to use another app while waiting.</string>
 	<key>NSLocationUsageDescription</key>
 	<string>Let SHIPMATE get your location when requesting a pickup.</string>
 	<key>NSAppTransportSecurity</key>

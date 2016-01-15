@@ -28,6 +28,7 @@
 int phoneNumber = 1234567890;
 
 BOOL centeredOnLocation = NO;
+BOOL rideCancelled = NO;
 
 - (void)viewDidLoad {
     [super viewDidLoad];
@@ -35,7 +36,7 @@ BOOL centeredOnLocation = NO;
     mainMapView = [[MKMapView alloc] init];
     
     requestPickupButton = [UIButton buttonWithType:UIButtonTypeSystem];
-    callDirectButton = [[UIButton alloc] init];
+    callDirectButton = [UIButton buttonWithType:UIButtonTypeSystem];
     menuButton = [[UIButton alloc] init];
     
     
@@ -46,10 +47,18 @@ BOOL centeredOnLocation = NO;
     
     [self.view addSubview:mainMapView];
     [self.view addSubview:requestPickupButton];
+    [self.view addSubview:callDirectButton];
     
     requestPickupButton.layer.cornerRadius = 8;
     requestPickupButton.clipsToBounds = YES;
     requestPickupButton.titleLabel.font = [UIFont systemFontOfSize:20];
+    
+    callDirectButton.layer.cornerRadius = 30;
+    callDirectButton.clipsToBounds = YES;
+    callDirectButton.titleLabel.font = [UIFont systemFontOfSize:30];
+    [callDirectButton setTitle:@"📞" forState:UIControlStateNormal];
+    callDirectButton.backgroundColor = [UIColor colorWithRed:(0/255.0) green:(244/255.0) blue:(109/255.0) alpha:1.0];
+    [callDirectButton addTarget:self action:@selector(callShipmate) forControlEvents:UIControlEventTouchUpInside];
     
     [mainMapView setRotateEnabled:NO];
     [mainMapView setPitchEnabled:NO];
@@ -73,7 +82,11 @@ BOOL centeredOnLocation = NO;
                                                                       options:(NSLayoutFormatOptions)0
                                                                       metrics:nil views:dict]];
     
-    [self.view addConstraints:[NSLayoutConstraint constraintsWithVisualFormat:@"V:|-(>=100)-[requestPickupButton(==45)]-10-|"
+    [self.view addConstraints:[NSLayoutConstraint constraintsWithVisualFormat:@"H:|-(>=10)-[callDirectButton(==60)]-10-|"
+                                                                      options:(NSLayoutFormatOptions)0
+                                                                      metrics:nil views:dict]];
+    
+    [self.view addConstraints:[NSLayoutConstraint constraintsWithVisualFormat:@"V:|-(>=100)-[callDirectButton(==60)]-5-[requestPickupButton(==45)]-10-|"
                                                                       options:(NSLayoutFormatOptions)0
                                                                       metrics:nil views:dict]];
     //move Apple maps legal agreement up
@@ -82,7 +95,7 @@ BOOL centeredOnLocation = NO;
     
     [self monitorVanLocation];
     
-    [self pickupInactive];
+    [self pickupConnecting];
     
     locationManager = [[CLLocationManager alloc] init];
     [locationManager setDelegate:self];
@@ -117,24 +130,63 @@ BOOL centeredOnLocation = NO;
 
 - (void)monitorVanLocation {
     dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_LOW, 0), ^(void) {
+        BOOL __block hasConnection = NO;
+        BOOL __block hasNoVans = NO;
+        int lastAmountOfVans;
         
         while (1) {
             NSArray *retrievedVanLocations = [ShipmateNetwork getVanLocations];
             
+            if (!retrievedVanLocations) {
+                dispatch_async(dispatch_get_main_queue(), ^(void){
+                    [self pickupStatusError];
+                    hasConnection = NO;
+                });
+                usleep(1000000);
+                
+                continue;
+            } else {
+                if (!hasConnection && [retrievedVanLocations count] > 0) { //if UI updated for no connection, set UI for current status by passing -1 to monitorStatusAndSwitch
+                    hasConnection = YES; //set first so that future while loops do not rerun this
+                    [self monitorStatusAndSwitch:-2];
+                }
+            }
+            
             if ([retrievedVanLocations count] == 0) {
                 dispatch_async(dispatch_get_main_queue(), ^(void){
+                    [mainMapView removeAnnotations:vanAnnotations];
+                    vanAnnotations = nil;
                     [self pickupUnavailable];
+                    hasConnection = YES;
+                    hasNoVans = YES;
                 });
             } else {
                 //alloc new annotation array if van count changes
                 BOOL removeAndReaddAnnotations = NO;
+                
+                if (hasNoVans) { //if UI updated for no vans, set UI for current status by passing -1 to monitorStatusAndSwitch
+                    hasNoVans = NO; //set first so that future while loops do not rerun this because this call may tkae a
+                    [self monitorStatusAndSwitch:-2];
+                }
+                
+                dispatch_semaphore_t semaphore = dispatch_semaphore_create(0);
+                
+                //if counts of vans do not match up
                 if (!vanAnnotations || [vanAnnotations count] != [retrievedVanLocations count]) {
                     removeAndReaddAnnotations = YES;
-                    [mainMapView removeAnnotations:vanAnnotations];
-                    vanAnnotations = [[NSMutableArray alloc] initWithCapacity:[retrievedVanLocations count]];
-                    for (int i = 0; i < [retrievedVanLocations count]; i++)
-                        vanAnnotations[i] = [[VanAnnotation alloc] init];
+                    dispatch_async(dispatch_get_main_queue(), ^(void){
+                        [mainMapView removeAnnotations:vanAnnotations];
+                        vanAnnotations = [[NSMutableArray alloc] initWithCapacity:[retrievedVanLocations count]];
+                        for (int i = 0; i < [retrievedVanLocations count]; i++)
+                            vanAnnotations[i] = [[VanAnnotation alloc] init];
+                        dispatch_semaphore_signal(semaphore);
+                    });
+                } else {
+                    dispatch_semaphore_signal(semaphore);
                 }
+                
+                //wait for mainMapView update on main thread
+                dispatch_semaphore_wait(semaphore, DISPATCH_TIME_FOREVER);
                 
                 //update annotation array with retrieved locations
                 for (int i = 0; i < [retrievedVanLocations count]; i++) {
@@ -149,7 +201,9 @@ BOOL centeredOnLocation = NO;
                 }
                 
                 if (removeAndReaddAnnotations) {
-                    [mainMapView addAnnotations:vanAnnotations];
+                    dispatch_async(dispatch_get_main_queue(), ^(void){
+                        [mainMapView addAnnotations:vanAnnotations];
+                    });
                 }
             }
             usleep(1000000);
@@ -199,6 +253,7 @@ BOOL centeredOnLocation = NO;
 
 }
 
+//pass -1 for currentStatus to switch on any returned status
 - (void)monitorStatusAndSwitch:(int)currentStatus {
     dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_LOW, 0), ^(void) {
         
@@ -232,6 +287,8 @@ BOOL centeredOnLocation = NO;
                     
                 default:
                     NSLog(@"Unknown status %d", status);
+                    if (!rideCancelled)
+                        [self pickupStatusError];
             }
         };
         
@@ -242,13 +299,22 @@ BOOL centeredOnLocation = NO;
     });
 }
 
-- (void)pickupUnavailable {
-    requestPickupButton.backgroundColor = [UIColor colorWithRed:(100/255.0) green:(100/255.0) blue:(100/255.0) alpha:1.0];
-    [requestPickupButton setTitle:@"SHIPMATE not running. Tap to call directly." forState:UIControlStateNormal];
+- (void)pickupConnecting {
+    requestPickupButton.backgroundColor = [UIColor colorWithRed:(201/255.0) green:(48/255.0) blue:(44/255.0) alpha:1.0];
+    [requestPickupButton setTitle:@"Connecting" forState:UIControlStateNormal];
     [requestPickupButton setTitleColor:[UIColor whiteColor] forState:UIControlStateNormal];
     
     [requestPickupButton removeTarget:nil action:NULL forControlEvents:UIControlEventTouchUpInside];
-    [requestPickupButton addTarget:self action:@selector(callShipmate) forControlEvents:UIControlEventTouchUpInside];
+    
+    [mainMapView setUserTrackingMode:MKUserTrackingModeNone];
+}
+
+- (void)pickupUnavailable {
+    requestPickupButton.backgroundColor = [UIColor colorWithRed:(100/255.0) green:(100/255.0) blue:(100/255.0) alpha:1.0];
+    [requestPickupButton setTitle:@"SHIPMATE not running" forState:UIControlStateNormal];
+    [requestPickupButton setTitleColor:[UIColor whiteColor] forState:UIControlStateNormal];
+    
+    [requestPickupButton removeTarget:nil action:NULL forControlEvents:UIControlEventTouchUpInside];
     
     [mainMapView setUserTrackingMode:MKUserTrackingModeNone];
 }
@@ -273,7 +339,7 @@ BOOL centeredOnLocation = NO;
     
     [mainMapView setUserTrackingMode:MKUserTrackingModeFollow];
     
-    /*
+    
     //Check for phone capability
     if (![[UIApplication sharedApplication] canOpenURL:[NSURL URLWithString:@"tel://"]]) {
         UIAlertController *cannotOpenTelAlert = [UIAlertController alertControllerWithTitle:@"Unable to make phone calls right now." message:@"Call Shipmate at 410-320-5961 directly." preferredStyle:UIAlertControllerStyleAlert];
@@ -285,7 +351,6 @@ BOOL centeredOnLocation = NO;
         [self pickupInactive];
         return;
     }
-     */
 
     dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_HIGH, 0), ^(void) {
         BOOL success = [ShipmateNetwork newPickup:phoneNumber withLocation:(CGPointMake(123, 321)) withSender:self];
@@ -293,6 +358,7 @@ BOOL centeredOnLocation = NO;
         if (success) {
             dispatch_async(dispatch_get_main_queue(), ^(void){
                 [self monitorStatusAndSwitch:0];
+                rideCancelled = NO;
             });
         } else {
             dispatch_async(dispatch_get_main_queue(), ^(void){
@@ -320,6 +386,17 @@ BOOL centeredOnLocation = NO;
     NSString *callMessage = [NSString stringWithFormat:@"Calling from xxx-xxx-xxxx"];
     [requestPickupButton setTitle:callMessage forState:UIControlStateDisabled];
      */
+    
+    //Check for phone capability
+    if (![[UIApplication sharedApplication] canOpenURL:[NSURL URLWithString:@"tel://"]]) {
+        UIAlertController *cannotOpenTelAlert = [UIAlertController alertControllerWithTitle:@"Unable to make phone calls right now." message:@"Call Shipmate at 410-320-5961 directly." preferredStyle:UIAlertControllerStyleAlert];
+        [cannotOpenTelAlert addAction:[UIAlertAction
+                                       actionWithTitle:@"Dismiss"
+                                       style:UIAlertActionStyleCancel
+                                       handler:^(UIAlertAction *alertAction) {}]];
+        [self presentViewController:cannotOpenTelAlert animated:YES completion:^(void) {}];
+        return;
+    }
     
     [[UIApplication sharedApplication] openURL:[NSURL URLWithString:@"tel://5103868680"]];
     
@@ -350,6 +427,13 @@ BOOL centeredOnLocation = NO;
     [requestPickupButton setTitle:@"Pickup complete" forState:UIControlStateNormal];
 }
 
+- (void)pickupStatusError {
+    requestPickupButton.backgroundColor = [UIColor colorWithRed:(201/255.0) green:(48/255.0) blue:(44/255.0) alpha:1.0];
+    [requestPickupButton setTitle:@"⚡ Connection error" forState:UIControlStateNormal];
+    [requestPickupButton removeTarget:nil action:NULL forControlEvents:UIControlEventTouchUpInside];
+    [mainMapView setUserTrackingMode:MKUserTrackingModeNone];
+}
+
 - (void)confirmPickupCancel {
     UIAlertController *confirmCancelAlert = [UIAlertController alertControllerWithTitle:@"Cancel Pickup?" message:nil preferredStyle:UIAlertControllerStyleAlert];
     [confirmCancelAlert addAction:[UIAlertAction
@@ -365,6 +449,7 @@ BOOL centeredOnLocation = NO;
                                            }
                                            dispatch_async(dispatch_get_main_queue(), ^(void){
                                                [self pickupInactive];
+                                               rideCancelled = YES;
                                            });
                                        });
                                    }]];

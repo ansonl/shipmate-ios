@@ -21,7 +21,7 @@ NSString *const kGetVanLocations = @"/getVanLocations";
     NSURL *aUrl = [NSURL URLWithString:[NSString stringWithFormat:@"%@%@",kBaseServer, kNewPickup]];
     NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:aUrl
                                                            cachePolicy:NSURLRequestReloadIgnoringCacheData
-                                                       timeoutInterval:30.0];
+                                                       timeoutInterval:15.0];
     
     [request setHTTPMethod:@"POST"];
     NSString *postString = [NSString stringWithFormat:@"phoneNumber=%d&latitude=%f&longitude=%f&phrase=%@", phoneNumber, location.x, location.y, [[[UIDevice currentDevice] identifierForVendor] UUIDString]];
@@ -74,7 +74,7 @@ NSString *const kGetVanLocations = @"/getVanLocations";
     NSURL *aUrl = [NSURL URLWithString:[NSString stringWithFormat:@"%@%@",kBaseServer, kGetPickupInfo]];
     NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:aUrl
                                                            cachePolicy:NSURLRequestReloadIgnoringCacheData
-                                                       timeoutInterval:30.0];
+                                                       timeoutInterval:15.0];
     
     [request setHTTPMethod:@"POST"];
     NSString *postString = [NSString stringWithFormat:@"phoneNumber=%d&latitude=%f&longitude=%f&phrase=%@", phoneNumber, location.x, location.y, [[[UIDevice currentDevice] identifierForVendor] UUIDString]];
@@ -124,7 +124,7 @@ NSString *const kGetVanLocations = @"/getVanLocations";
     NSURL *aUrl = [NSURL URLWithString:[NSString stringWithFormat:@"%@%@",kBaseServer, kCancelPickup]];
     NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:aUrl
                                                            cachePolicy:NSURLRequestReloadIgnoringCacheData
-                                                       timeoutInterval:30.0];
+                                                       timeoutInterval:15.0];
     
     [request setHTTPMethod:@"POST"];
     NSString *postString = [NSString stringWithFormat:@"phoneNumber=%d&phrase=%@", phoneNumber, [[[UIDevice currentDevice] identifierForVendor] UUIDString]];
@@ -178,7 +178,7 @@ NSString *const kGetVanLocations = @"/getVanLocations";
     NSURL *aUrl = [NSURL URLWithString:[NSString stringWithFormat:@"%@%@",kBaseServer, kGetVanLocations]];
     NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:aUrl
                                                            cachePolicy:NSURLRequestReloadIgnoringCacheData
-                                                       timeoutInterval:30.0];
+                                                       timeoutInterval:15.0];
     
     [request setHTTPMethod:@"GET"];
     
