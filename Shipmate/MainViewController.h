@@ -10,7 +10,7 @@
 #import <CoreLocation/CoreLocation.h>
 @import MapKit;
 
-@interface MainViewController : UIViewController <CLLocationManagerDelegate, MKMapViewDelegate>
+@interface MainViewController : UIViewController <CLLocationManagerDelegate, MKMapViewDelegate, UITextFieldDelegate>
 
 //- (void)callShipmate;
 

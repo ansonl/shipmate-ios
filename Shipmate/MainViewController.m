@@ -20,45 +20,60 @@
     MKMapView *mainMapView;
     UIButton *requestPickupButton;
     UIButton *callDirectButton;
-    UIButton *menuButton;
+    UIButton *changePhoneNumberButton;
     CLLocationManager *locationManager;
     NSMutableArray<id<MKAnnotation>> *vanAnnotations;
+    NSUserDefaults *sharedDefaults;
+    NSString *phoneNumber;
 }
-
-int phoneNumber = 1234567890;
 
 BOOL centeredOnLocation = NO;
 BOOL rideCancelled = NO;
 
+UIAlertAction *phoneNumberSaveAction;
+
+NSString *const kPhoneNumberSettingsKey = @"phoneNumber";
+
 - (void)viewDidLoad {
     [super viewDidLoad];
+    
     // Do any additional setup after loading the view.
     mainMapView = [[MKMapView alloc] init];
     
     requestPickupButton = [UIButton buttonWithType:UIButtonTypeSystem];
     callDirectButton = [UIButton buttonWithType:UIButtonTypeSystem];
-    menuButton = [[UIButton alloc] init];
+    changePhoneNumberButton = [[UIButton alloc] init];
     
     
     mainMapView.translatesAutoresizingMaskIntoConstraints = NO;
     requestPickupButton.translatesAutoresizingMaskIntoConstraints = NO;
     callDirectButton.translatesAutoresizingMaskIntoConstraints = NO;
-    menuButton.translatesAutoresizingMaskIntoConstraints = NO;
+    changePhoneNumberButton.translatesAutoresizingMaskIntoConstraints = NO;
     
     [self.view addSubview:mainMapView];
     [self.view addSubview:requestPickupButton];
     [self.view addSubview:callDirectButton];
+    [self.view addSubview:changePhoneNumberButton];
     
     requestPickupButton.layer.cornerRadius = 8;
     requestPickupButton.clipsToBounds = YES;
     requestPickupButton.titleLabel.font = [UIFont systemFontOfSize:20];
     
-    callDirectButton.layer.cornerRadius = 30;
+    callDirectButton.layer.cornerRadius = 25;
     callDirectButton.clipsToBounds = YES;
     callDirectButton.titleLabel.font = [UIFont systemFontOfSize:30];
-    [callDirectButton setTitle:@"📞" forState:UIControlStateNormal];
-    callDirectButton.backgroundColor = [UIColor colorWithRed:(0/255.0) green:(244/255.0) blue:(109/255.0) alpha:1.0];
+    [callDirectButton setTitle:@"\u260E\U0000FE0E" forState:UIControlStateNormal];
+    [callDirectButton setTitleColor:[UIColor whiteColor] forState:UIControlStateNormal];
+    callDirectButton.backgroundColor = [UIColor colorWithRed:(0/255.0) green:(193/255.0) blue:(94/255.0) alpha:1.0];
     [callDirectButton addTarget:self action:@selector(callShipmate) forControlEvents:UIControlEventTouchUpInside];
+    
+    changePhoneNumberButton.layer.cornerRadius = 8;
+    changePhoneNumberButton.clipsToBounds = YES;
+    changePhoneNumberButton.titleLabel.font = [UIFont systemFontOfSize:15];
+    [changePhoneNumberButton setTitle:@"\u2699\U0000FE0E Change Number" forState:UIControlStateNormal];
+    [changePhoneNumberButton setTitleColor:[UIColor whiteColor] forState:UIControlStateNormal];
+    changePhoneNumberButton.backgroundColor = [UIColor colorWithRed:(0/255.0) green:(0/255.0) blue:(0/255.0) alpha:0.8];
+    [changePhoneNumberButton addTarget:self action:@selector(changePhoneNumber) forControlEvents:UIControlEventTouchUpInside];
     
     [mainMapView setRotateEnabled:NO];
     [mainMapView setPitchEnabled:NO];
@@ -69,7 +84,8 @@ BOOL rideCancelled = NO;
     [mainMapView setDelegate:self];
     [mainMapView addAnnotations:vanAnnotations];
     
-    NSDictionary *dict = NSDictionaryOfVariableBindings(mainMapView, requestPickupButton, callDirectButton, menuButton);
+    id topGuide = [self topLayoutGuide];
+    NSDictionary *dict = NSDictionaryOfVariableBindings(mainMapView, requestPickupButton, callDirectButton, changePhoneNumberButton, topGuide);
     [self.view addConstraints:[NSLayoutConstraint constraintsWithVisualFormat:@"H:|[mainMapView]|"
                                                                       options:(NSLayoutFormatOptions)0
                                                                       metrics:nil views:dict]];
@@ -82,24 +98,90 @@ BOOL rideCancelled = NO;
                                                                       options:(NSLayoutFormatOptions)0
                                                                       metrics:nil views:dict]];
     
-    [self.view addConstraints:[NSLayoutConstraint constraintsWithVisualFormat:@"H:|-(>=10)-[callDirectButton(==60)]-10-|"
+    [self.view addConstraints:[NSLayoutConstraint constraintsWithVisualFormat:@"H:|-10-[changePhoneNumberButton(==150)]-(>=10)-[callDirectButton(==50)]-10-|"
                                                                       options:(NSLayoutFormatOptions)0
                                                                       metrics:nil views:dict]];
     
-    [self.view addConstraints:[NSLayoutConstraint constraintsWithVisualFormat:@"V:|-(>=100)-[callDirectButton(==60)]-5-[requestPickupButton(==45)]-10-|"
+    [self.view addConstraints:[NSLayoutConstraint constraintsWithVisualFormat:@"V:|-(>=100)-[requestPickupButton(==45)]-10-|"
+                                                                      options:(NSLayoutFormatOptions)0
+                                                                      metrics:nil views:dict]];
+    
+    [self.view addConstraints:[NSLayoutConstraint constraintsWithVisualFormat:@"V:[callDirectButton(==50)]-10-[requestPickupButton]"
+                                                                      options:(NSLayoutFormatOptions)0
+                                                                      metrics:nil views:dict]];
+    
+    [self.view addConstraints:[NSLayoutConstraint constraintsWithVisualFormat:@"V:|-0-[topGuide]-10-[changePhoneNumberButton(==25)]-(>=10)-|"
                                                                       options:(NSLayoutFormatOptions)0
                                                                       metrics:nil views:dict]];
     //move Apple maps legal agreement up
     //http://jdkuzma.tumblr.com/post/79294999487/xcode-mapview-offsetting-the-compass-and-legal
     [mainMapView setLayoutMargins:UIEdgeInsetsMake(0, 0, 50, 0)];
+}
+
+- (void)viewDidAppear:(BOOL)animated {
+    [self pickupConnecting];
     
     [self monitorVanLocation];
     
-    [self pickupConnecting];
+    phoneNumber = [self getPhoneNumber];
+    if (!phoneNumber) {
+        [self changePhoneNumber];
+    }
     
     locationManager = [[CLLocationManager alloc] init];
     [locationManager setDelegate:self];
     [self setupForLocation];
+}
+
+- (NSString *)getPhoneNumber {
+    if (!sharedDefaults)
+        sharedDefaults = [NSUserDefaults standardUserDefaults];
+    return [sharedDefaults stringForKey:kPhoneNumberSettingsKey];
+}
+
+- (void)changePhoneNumber {
+    if (!sharedDefaults)
+        sharedDefaults = [NSUserDefaults standardUserDefaults];
+    
+    UIAlertController *inputPhoneNumberAlert = [UIAlertController alertControllerWithTitle:@"Set your phone number. " message:@"SHIPMATE drivers will match location using the phone number that you call from.\nPlease provide last 10 digits. We won't know where you are if you provide the wrong number :(" preferredStyle:UIAlertControllerStyleAlert];
+    phoneNumberSaveAction = [UIAlertAction actionWithTitle:@"Save"
+                                            style:UIAlertActionStyleDefault
+                                            handler:^(UIAlertAction *alertAction) {
+                                                [sharedDefaults setObject:inputPhoneNumberAlert.textFields.firstObject.text forKey:kPhoneNumberSettingsKey];
+                                                [sharedDefaults synchronize];
+                                                phoneNumber = [sharedDefaults objectForKey:kPhoneNumberSettingsKey]; //re-set global phoneNumber string
+                                            }];
+    [inputPhoneNumberAlert addAction:phoneNumberSaveAction];
+    [inputPhoneNumberAlert addTextFieldWithConfigurationHandler:^(UITextField *textField) {
+        NSString *savedPhoneNumber = [self getPhoneNumber];
+        [textField setPlaceholder:@"4012935001"];
+        if (savedPhoneNumber) {
+            [textField setText:savedPhoneNumber];
+        }
+        
+        [UIApplication sharedApplication].applicationSupportsShakeToEdit = NO;
+        [textField setKeyboardType:UIKeyboardTypeNumberPad];
+        [textField setDelegate:self];
+        
+        if (savedPhoneNumber && [savedPhoneNumber length] == 10) {
+            [phoneNumberSaveAction setEnabled:YES];
+        } else {
+            [phoneNumberSaveAction setEnabled:NO];
+        }
+    }];
+    [self presentViewController:inputPhoneNumberAlert animated:YES completion:^(void) {}];
+}
+
+- (BOOL)textField:(UITextField *)textField shouldChangeCharactersInRange:(NSRange)range replacementString:(NSString *)string {
+    NSUInteger newLength = [textField.text length] + [string length] - range.length;
+    
+    if (newLength == 10) {
+        [phoneNumberSaveAction setEnabled:YES];
+    } else {
+        [phoneNumberSaveAction setEnabled:NO];
+    }
+    
+    return newLength <= 10;
 }
 
 - (MKAnnotationView *)mapView:(MKMapView *)mapView viewForAnnotation:(id<MKAnnotation>)annotation {
@@ -147,7 +229,8 @@ BOOL rideCancelled = NO;
             } else {
                 if (!hasConnection && [retrievedVanLocations count] > 0) { //if UI updated for no connection, set UI for current status by passing -1 to monitorStatusAndSwitch
                     hasConnection = YES; //set first so that future while loops do not rerun this
-                    [self monitorStatusAndSwitch:-2];
+                    [self pickupInactive];
+                    [self monitorStatusAndSwitch:-1];
                 }
             }
             
@@ -192,7 +275,7 @@ BOOL rideCancelled = NO;
                     VanAnnotation __block *targetAnnotation = vanAnnotations[i];
                     //MKMapKit uses KVO key value obs to know when to update annotation location. setCoordinate must be called on main thread for KVO to work.
                     dispatch_async(dispatch_get_main_queue(), ^(void){
-                        [UIView animateWithDuration:0.5 animations:^{
+                        [UIView animateWithDuration:1.0 animations:^{
                             [targetAnnotation setTitle:[NSString stringWithFormat:@"Van %d", i+1]];
                             [targetAnnotation setCoordinate:CLLocationCoordinate2DMake([[retrievedVanLocations[i] objectForKey:@"latitude"] doubleValue], [[retrievedVanLocations[i] objectForKey:@"longitude"] doubleValue])];
                         }];
@@ -255,13 +338,16 @@ BOOL rideCancelled = NO;
 //pass -1 for currentStatus to switch on any returned status
 - (void)monitorStatusAndSwitch:(int)currentStatus {
     dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_LOW, 0), ^(void) {
+        CLLocationCoordinate2D currentLocation = [[locationManager location] coordinate];
+        CGPoint currentPoint = CGPointMake(currentLocation.latitude, currentLocation.longitude);
         
-        int newStatus = [ShipmateNetwork getPickupInfo:phoneNumber withLocation:(CGPointMake(0, 0)) withSender:self];
+        int newStatus = [ShipmateNetwork getPickupInfo:phoneNumber withLocation:currentPoint withSender:self];
         
         //loop and wait for status change
         while (currentStatus == newStatus) {
             usleep(1000000);
-            newStatus = [ShipmateNetwork getPickupInfo:phoneNumber withLocation:(CGPointMake(0, 0)) withSender:self];;
+            newStatus = [ShipmateNetwork getPickupInfo:phoneNumber withLocation:currentPoint withSender:self];
+            
         }
         
         //block that will switch
@@ -272,7 +358,6 @@ BOOL rideCancelled = NO;
                     break;
                     
                 case 1: //pending
-                    [self callShipmate];
                     [self pickupPending];
                     break;
                     
@@ -282,6 +367,10 @@ BOOL rideCancelled = NO;
                     
                 case 3: //completed
                     [self pickupComplete];
+                    break;
+                    
+                case -2: //wrong password
+                    [self pickupWrongPassword];
                     break;
                     
                 default:
@@ -300,6 +389,7 @@ BOOL rideCancelled = NO;
 
 - (void)pickupConnecting {
     requestPickupButton.backgroundColor = [UIColor colorWithRed:(201/255.0) green:(48/255.0) blue:(44/255.0) alpha:1.0];
+    requestPickupButton.titleLabel.font = [UIFont systemFontOfSize:20];
     [requestPickupButton setTitle:@"Connecting" forState:UIControlStateNormal];
     [requestPickupButton setTitleColor:[UIColor whiteColor] forState:UIControlStateNormal];
     
@@ -310,6 +400,7 @@ BOOL rideCancelled = NO;
 
 - (void)pickupUnavailable {
     requestPickupButton.backgroundColor = [UIColor colorWithRed:(100/255.0) green:(100/255.0) blue:(100/255.0) alpha:1.0];
+    requestPickupButton.titleLabel.font = [UIFont systemFontOfSize:20];
     [requestPickupButton setTitle:@"SHIPMATE not running" forState:UIControlStateNormal];
     [requestPickupButton setTitleColor:[UIColor whiteColor] forState:UIControlStateNormal];
     
@@ -320,6 +411,7 @@ BOOL rideCancelled = NO;
 
 - (void)pickupInactive {
     requestPickupButton.backgroundColor = [UIColor colorWithRed:(38/255.0) green:(68/255.0) blue:(153/255.0) alpha:1.0];
+    requestPickupButton.titleLabel.font = [UIFont systemFontOfSize:20];
     [requestPickupButton setTitle:@"Request Pickup" forState:UIControlStateNormal];
     [requestPickupButton setTitleColor:[UIColor whiteColor] forState:UIControlStateNormal];
     
@@ -334,7 +426,9 @@ BOOL rideCancelled = NO;
 - (void)pickupRequested:(UIButton *)sender {
     [requestPickupButton removeTarget:nil action:NULL forControlEvents:UIControlEventTouchUpInside];
     [requestPickupButton addTarget:self action:@selector(confirmPickupCancel) forControlEvents:UIControlEventTouchUpInside];
+    requestPickupButton.titleLabel.font = [UIFont systemFontOfSize:20];
     [requestPickupButton setTitle:@"Requesting" forState:UIControlStateNormal];
+    [requestPickupButton setTitleColor:[UIColor whiteColor] forState:UIControlStateNormal];
     
     [mainMapView setUserTrackingMode:MKUserTrackingModeFollow];
     
@@ -352,11 +446,13 @@ BOOL rideCancelled = NO;
     }
 
     dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_HIGH, 0), ^(void) {
-        BOOL success = [ShipmateNetwork newPickup:phoneNumber withLocation:(CGPointMake(123, 321)) withSender:self];
+        CLLocationCoordinate2D currentLocation = [[locationManager location] coordinate];
+        BOOL success = [ShipmateNetwork newPickup:phoneNumber withLocation:CGPointMake(currentLocation.latitude, currentLocation.longitude) withSender:self];
         
         if (success) {
             dispatch_async(dispatch_get_main_queue(), ^(void){
                 [self monitorStatusAndSwitch:0];
+                [self callShipmate];
                 rideCancelled = NO;
             });
         } else {
@@ -405,6 +501,7 @@ BOOL rideCancelled = NO;
     requestPickupButton.backgroundColor = [UIColor colorWithRed:(236/255.0) green:(151/255.0) blue:(31/255.0) alpha:1.0];
     [requestPickupButton removeTarget:nil action:NULL forControlEvents:UIControlEventTouchUpInside];
     [requestPickupButton addTarget:self action:@selector(confirmPickupCancel) forControlEvents:UIControlEventTouchUpInside];
+    requestPickupButton.titleLabel.font = [UIFont systemFontOfSize:20];
     [requestPickupButton setTitle:@"Pending driver" forState:UIControlStateNormal];
     
     [self monitorStatusAndSwitch:1];
@@ -414,6 +511,7 @@ BOOL rideCancelled = NO;
     requestPickupButton.backgroundColor = [UIColor colorWithRed:(49/255.0) green:(176/255.0) blue:(213/255.0) alpha:1.0];
     [requestPickupButton removeTarget:nil action:NULL forControlEvents:UIControlEventTouchUpInside];
     [requestPickupButton addTarget:self action:@selector(confirmPickupCancel) forControlEvents:UIControlEventTouchUpInside];
+    requestPickupButton.titleLabel.font = [UIFont systemFontOfSize:20];
     [requestPickupButton setTitle:@"Pickup enroute" forState:UIControlStateNormal];
     
     [self monitorStatusAndSwitch:2];
@@ -423,14 +521,28 @@ BOOL rideCancelled = NO;
     requestPickupButton.backgroundColor = [UIColor colorWithRed:(68/255.0) green:(153/255.0) blue:(38/255.0) alpha:1.0];
     [requestPickupButton removeTarget:nil action:NULL forControlEvents:UIControlEventTouchUpInside];
     [requestPickupButton addTarget:self action:@selector(pickupInactive) forControlEvents:UIControlEventTouchUpInside];
+    requestPickupButton.titleLabel.font = [UIFont systemFontOfSize:20];
     [requestPickupButton setTitle:@"Pickup complete" forState:UIControlStateNormal];
 }
 
 - (void)pickupStatusError {
     requestPickupButton.backgroundColor = [UIColor colorWithRed:(201/255.0) green:(48/255.0) blue:(44/255.0) alpha:1.0];
-    [requestPickupButton setTitle:@"⚡ Connection error" forState:UIControlStateNormal];
+    requestPickupButton.titleLabel.font = [UIFont systemFontOfSize:15];
+    [requestPickupButton setTitle:@"⚡\U0000FE0E Connection error, retrying..." forState:UIControlStateNormal];
     [requestPickupButton removeTarget:nil action:NULL forControlEvents:UIControlEventTouchUpInside];
     [mainMapView setUserTrackingMode:MKUserTrackingModeNone];
+    
+    [self monitorStatusAndSwitch:-1];
+}
+
+- (void)pickupWrongPassword {
+    requestPickupButton.backgroundColor = [UIColor colorWithRed:(201/255.0) green:(48/255.0) blue:(44/255.0) alpha:1.0];
+    requestPickupButton.titleLabel.font = [UIFont systemFontOfSize:12];
+    [requestPickupButton setTitle:@"\u1f6ab\U0000FE0E Phone number in use by someone else, use another phone number. " forState:UIControlStateNormal];
+    [requestPickupButton removeTarget:nil action:NULL forControlEvents:UIControlEventTouchUpInside];
+    [mainMapView setUserTrackingMode:MKUserTrackingModeNone];
+    
+    [self monitorStatusAndSwitch:-2];
 }
 
 - (void)confirmPickupCancel {

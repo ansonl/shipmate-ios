@@ -17,14 +17,14 @@ NSString *const kCancelPickup = @"/cancelPickup";
 NSString *const kGetVanLocations = @"/getVanLocations";
 
 
-+ (BOOL)newPickup:(int)phoneNumber withLocation:(CGPoint)location withSender:(MainViewController *)sender {
++ (BOOL)newPickup:(NSString *)phoneNumber withLocation:(CGPoint)location withSender:(MainViewController *)sender {
     NSURL *aUrl = [NSURL URLWithString:[NSString stringWithFormat:@"%@%@",kBaseServer, kNewPickup]];
     NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:aUrl
                                                            cachePolicy:NSURLRequestReloadIgnoringCacheData
                                                        timeoutInterval:15.0];
     
     [request setHTTPMethod:@"POST"];
-    NSString *postString = [NSString stringWithFormat:@"phoneNumber=%d&latitude=%f&longitude=%f&phrase=%@", phoneNumber, location.x, location.y, [[[UIDevice currentDevice] identifierForVendor] UUIDString]];
+    NSString *postString = [NSString stringWithFormat:@"phoneNumber=%@&latitude=%f&longitude=%f&phrase=%@", phoneNumber, location.x, location.y, [[[UIDevice currentDevice] identifierForVendor] UUIDString]];
     [request setHTTPBody:[postString dataUsingEncoding:NSUTF8StringEncoding]];
     
     NSError * __block sharedError = nil;
@@ -70,14 +70,14 @@ NSString *const kGetVanLocations = @"/getVanLocations";
     return NO;
 }
 
-+ (int)getPickupInfo:(int)phoneNumber withLocation:(CGPoint)location withSender:(MainViewController *)sender{
++ (int)getPickupInfo:(NSString *)phoneNumber withLocation:(CGPoint)location withSender:(MainViewController *)sender{
     NSURL *aUrl = [NSURL URLWithString:[NSString stringWithFormat:@"%@%@",kBaseServer, kGetPickupInfo]];
     NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:aUrl
                                                            cachePolicy:NSURLRequestReloadIgnoringCacheData
                                                        timeoutInterval:15.0];
     
     [request setHTTPMethod:@"POST"];
-    NSString *postString = [NSString stringWithFormat:@"phoneNumber=%d&latitude=%f&longitude=%f&phrase=%@", phoneNumber, location.x, location.y, [[[UIDevice currentDevice] identifierForVendor] UUIDString]];
+    NSString *postString = [NSString stringWithFormat:@"phoneNumber=%@&latitude=%f&longitude=%f&phrase=%@", phoneNumber, location.x, location.y, [[[UIDevice currentDevice] identifierForVendor] UUIDString]];
     [request setHTTPBody:[postString dataUsingEncoding:NSUTF8StringEncoding]];
     
     NSError * __block sharedError = nil;
@@ -120,14 +120,14 @@ NSString *const kGetVanLocations = @"/getVanLocations";
     return [[output objectForKey:@"status"] intValue];
 }
 
-+ (BOOL)cancelPickup:(int)phoneNumber withSender:(MainViewController *)sender {
++ (BOOL)cancelPickup:(NSString *)phoneNumber withSender:(MainViewController *)sender {
     NSURL *aUrl = [NSURL URLWithString:[NSString stringWithFormat:@"%@%@",kBaseServer, kCancelPickup]];
     NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:aUrl
                                                            cachePolicy:NSURLRequestReloadIgnoringCacheData
                                                        timeoutInterval:15.0];
     
     [request setHTTPMethod:@"POST"];
-    NSString *postString = [NSString stringWithFormat:@"phoneNumber=%d&phrase=%@", phoneNumber, [[[UIDevice currentDevice] identifierForVendor] UUIDString]];
+    NSString *postString = [NSString stringWithFormat:@"phoneNumber=%@&phrase=%@", phoneNumber, [[[UIDevice currentDevice] identifierForVendor] UUIDString]];
     [request setHTTPBody:[postString dataUsingEncoding:NSUTF8StringEncoding]];
     
     NSError * __block sharedError = nil;
@@ -178,7 +178,7 @@ NSString *const kGetVanLocations = @"/getVanLocations";
     NSURL *aUrl = [NSURL URLWithString:[NSString stringWithFormat:@"%@%@",kBaseServer, kGetVanLocations]];
     NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:aUrl
                                                            cachePolicy:NSURLRequestReloadIgnoringCacheData
-                                                       timeoutInterval:15.0];
+                                                       timeoutInterval:5.0];
     
     [request setHTTPMethod:@"GET"];
     

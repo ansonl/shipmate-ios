@@ -11,9 +11,9 @@
 
 @interface ShipmateNetwork : NSObject
 
-+ (BOOL)newPickup:(int)phoneNumber withLocation:(CGPoint)location withSender:(MainViewController *)sender;
-+ (int)getPickupInfo:(int)phoneNumber withLocation:(CGPoint)location withSender:(MainViewController *)sender;
-+ (BOOL)cancelPickup:(int)phoneNumber withSender:(MainViewController *)sender;
++ (BOOL)newPickup:(NSString *)phoneNumber withLocation:(CGPoint)location withSender:(MainViewController *)sender;
++ (int)getPickupInfo:(NSString *)phoneNumber withLocation:(CGPoint)location withSender:(MainViewController *)sender;
++ (BOOL)cancelPickup:(NSString *)phoneNumber withSender:(MainViewController *)sender;
 + (NSArray *)getVanLocations;
 
 @end
