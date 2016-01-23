@@ -25,6 +25,7 @@
     NSMutableArray<id<MKAnnotation>> *vanAnnotations;
     NSUserDefaults *sharedDefaults;
     NSString *phoneNumber;
+    UIActivityIndicatorView *buttonActivityIndicator;
 }
 
 BOOL centeredOnLocation = NO;
@@ -43,17 +44,20 @@ NSString *const kPhoneNumberSettingsKey = @"phoneNumber";
     requestPickupButton = [UIButton buttonWithType:UIButtonTypeSystem];
     callDirectButton = [UIButton buttonWithType:UIButtonTypeSystem];
     changePhoneNumberButton = [[UIButton alloc] init];
+    buttonActivityIndicator = [[UIActivityIndicatorView alloc] initWithActivityIndicatorStyle:UIActivityIndicatorViewStyleWhite];
     
     
     mainMapView.translatesAutoresizingMaskIntoConstraints = NO;
     requestPickupButton.translatesAutoresizingMaskIntoConstraints = NO;
     callDirectButton.translatesAutoresizingMaskIntoConstraints = NO;
     changePhoneNumberButton.translatesAutoresizingMaskIntoConstraints = NO;
+    buttonActivityIndicator.translatesAutoresizingMaskIntoConstraints = NO;
     
     [self.view addSubview:mainMapView];
     [self.view addSubview:requestPickupButton];
     [self.view addSubview:callDirectButton];
     [self.view addSubview:changePhoneNumberButton];
+    [requestPickupButton addSubview:buttonActivityIndicator];
     
     requestPickupButton.layer.cornerRadius = 8;
     requestPickupButton.clipsToBounds = YES;
@@ -85,7 +89,7 @@ NSString *const kPhoneNumberSettingsKey = @"phoneNumber";
     [mainMapView addAnnotations:vanAnnotations];
     
     id topGuide = [self topLayoutGuide];
-    NSDictionary *dict = NSDictionaryOfVariableBindings(mainMapView, requestPickupButton, callDirectButton, changePhoneNumberButton, topGuide);
+    NSDictionary *dict = NSDictionaryOfVariableBindings(mainMapView, requestPickupButton, callDirectButton, changePhoneNumberButton, buttonActivityIndicator, topGuide);
     [self.view addConstraints:[NSLayoutConstraint constraintsWithVisualFormat:@"H:|[mainMapView]|"
                                                                       options:(NSLayoutFormatOptions)0
                                                                       metrics:nil views:dict]];
@@ -113,9 +117,18 @@ NSString *const kPhoneNumberSettingsKey = @"phoneNumber";
     [self.view addConstraints:[NSLayoutConstraint constraintsWithVisualFormat:@"V:|-0-[topGuide]-10-[changePhoneNumberButton(==25)]-(>=10)-|"
                                                                       options:(NSLayoutFormatOptions)0
                                                                       metrics:nil views:dict]];
+    
+    [requestPickupButton addConstraints:[NSLayoutConstraint constraintsWithVisualFormat:@"V:|-10-[buttonActivityIndicator]-(>=10)-|"
+                                                                      options:(NSLayoutFormatOptions)0
+                                                                      metrics:nil views:dict]];
+    
+    [requestPickupButton addConstraints:[NSLayoutConstraint constraintsWithVisualFormat:@"H:|-10-[buttonActivityIndicator]-(>=10)-|"
+                                                                                options:(NSLayoutFormatOptions)0
+                                                                                metrics:nil views:dict]];
     //move Apple maps legal agreement up
     //http://jdkuzma.tumblr.com/post/79294999487/xcode-mapview-offsetting-the-compass-and-legal
     [mainMapView setLayoutMargins:UIEdgeInsetsMake(0, 0, 50, 0)];
+    mainMapView.userLocation.title = @"You";
 }
 
 - (void)viewDidAppear:(BOOL)animated {
@@ -173,15 +186,27 @@ NSString *const kPhoneNumberSettingsKey = @"phoneNumber";
 }
 
 - (BOOL)textField:(UITextField *)textField shouldChangeCharactersInRange:(NSRange)range replacementString:(NSString *)string {
-    NSUInteger newLength = [textField.text length] + [string length] - range.length;
     
-    if (newLength == 10) {
-        [phoneNumberSaveAction setEnabled:YES];
-    } else {
-        [phoneNumberSaveAction setEnabled:NO];
+    NSString *validRegEx =@"^[0-9]*$"; //change this regular expression as your requirement
+    NSPredicate *regExPredicate =[NSPredicate predicateWithFormat:@"SELF MATCHES %@", validRegEx];
+    BOOL myStringMatchesRegEx = [regExPredicate evaluateWithObject:string];
+    if (myStringMatchesRegEx) {
+        NSUInteger newLength = [textField.text length] + [string length] - range.length;
+        
+        if (newLength >= 10) {
+            [phoneNumberSaveAction setEnabled:YES];
+        } else {
+            [phoneNumberSaveAction setEnabled:NO];
+        }
+        
+        return newLength <= 10;
     }
+    else
+        return NO;
     
-    return newLength <= 10;
+    
+    
+    
 }
 
 - (MKAnnotationView *)mapView:(MKMapView *)mapView viewForAnnotation:(id<MKAnnotation>)annotation {
@@ -220,16 +245,20 @@ NSString *const kPhoneNumberSettingsKey = @"phoneNumber";
             
             if (!retrievedVanLocations) {
                 dispatch_async(dispatch_get_main_queue(), ^(void){
+                    [mainMapView removeAnnotations:vanAnnotations];
+                    vanAnnotations = nil;
+                    
                     [self pickupStatusError];
                     hasConnection = NO;
+                    
                 });
-                usleep(1000000);
+                //sleep 10 seconds in between
+                usleep(10000000);
                 
                 continue;
             } else {
                 if (!hasConnection && [retrievedVanLocations count] > 0) { //if UI updated for no connection, set UI for current status by passing -1 to monitorStatusAndSwitch
                     hasConnection = YES; //set first so that future while loops do not rerun this
-                    [self pickupInactive];
                     [self monitorStatusAndSwitch:-1];
                 }
             }
@@ -248,7 +277,7 @@ NSString *const kPhoneNumberSettingsKey = @"phoneNumber";
                 
                 if (hasNoVans) { //if UI updated for no vans, set UI for current status by passing -1 to monitorStatusAndSwitch
                     hasNoVans = NO; //set first so that future while loops do not rerun this because this call may tkae a
-                    [self monitorStatusAndSwitch:-2];
+                    [self monitorStatusAndSwitch:-1];
                 }
                 
                 dispatch_semaphore_t semaphore = dispatch_semaphore_create(0);
@@ -345,9 +374,15 @@ NSString *const kPhoneNumberSettingsKey = @"phoneNumber";
         
         //loop and wait for status change
         while (currentStatus == newStatus) {
-            usleep(1000000);
+            usleep(5000000); //check every 5 seconds
             newStatus = [ShipmateNetwork getPickupInfo:phoneNumber withLocation:currentPoint withSender:self];
             
+            if (newStatus == -1) {
+                newStatus = currentStatus;
+                dispatch_async(dispatch_get_main_queue(), ^(void){
+                    [self pickupStatusError];
+                });
+            }
         }
         
         //block that will switch
@@ -395,6 +430,8 @@ NSString *const kPhoneNumberSettingsKey = @"phoneNumber";
     
     [requestPickupButton removeTarget:nil action:NULL forControlEvents:UIControlEventTouchUpInside];
     
+    [buttonActivityIndicator startAnimating];
+    
     [mainMapView setUserTrackingMode:MKUserTrackingModeNone];
 }
 
@@ -405,6 +442,8 @@ NSString *const kPhoneNumberSettingsKey = @"phoneNumber";
     [requestPickupButton setTitleColor:[UIColor whiteColor] forState:UIControlStateNormal];
     
     [requestPickupButton removeTarget:nil action:NULL forControlEvents:UIControlEventTouchUpInside];
+    
+    [buttonActivityIndicator startAnimating];
     
     [mainMapView setUserTrackingMode:MKUserTrackingModeNone];
 }
@@ -418,6 +457,8 @@ NSString *const kPhoneNumberSettingsKey = @"phoneNumber";
     [requestPickupButton removeTarget:nil action:NULL forControlEvents:UIControlEventTouchUpInside];
     [requestPickupButton addTarget:self action:@selector(pickupRequested:) forControlEvents:UIControlEventTouchUpInside];
     
+    [buttonActivityIndicator stopAnimating];
+    
     centeredOnLocation = NO;
     
     [mainMapView setUserTrackingMode:MKUserTrackingModeNone];
@@ -430,11 +471,13 @@ NSString *const kPhoneNumberSettingsKey = @"phoneNumber";
     [requestPickupButton setTitle:@"Requesting" forState:UIControlStateNormal];
     [requestPickupButton setTitleColor:[UIColor whiteColor] forState:UIControlStateNormal];
     
+    [buttonActivityIndicator startAnimating];
+    
     [mainMapView setUserTrackingMode:MKUserTrackingModeFollow];
     
     
     //Check for phone capability
-    if (![[UIApplication sharedApplication] canOpenURL:[NSURL URLWithString:@"tel://"]]) {
+    if (![[UIApplication sharedApplication] canOpenURL:[NSURL URLWithString:@"tel:5103868680"]] || UI_USER_INTERFACE_IDIOM() == UIUserInterfaceIdiomPad) {
         UIAlertController *cannotOpenTelAlert = [UIAlertController alertControllerWithTitle:@"Unable to make phone calls right now." message:@"Call Shipmate at 410-320-5961 directly." preferredStyle:UIAlertControllerStyleAlert];
         [cannotOpenTelAlert addAction:[UIAlertAction
                                        actionWithTitle:@"Dismiss"
@@ -483,7 +526,7 @@ NSString *const kPhoneNumberSettingsKey = @"phoneNumber";
      */
     
     //Check for phone capability
-    if (![[UIApplication sharedApplication] canOpenURL:[NSURL URLWithString:@"tel://"]]) {
+    if (![[UIApplication sharedApplication] canOpenURL:[NSURL URLWithString:@"tel:5103868680"]] || UI_USER_INTERFACE_IDIOM() == UIUserInterfaceIdiomPad) {
         UIAlertController *cannotOpenTelAlert = [UIAlertController alertControllerWithTitle:@"Unable to make phone calls right now." message:@"Call Shipmate at 410-320-5961 directly." preferredStyle:UIAlertControllerStyleAlert];
         [cannotOpenTelAlert addAction:[UIAlertAction
                                        actionWithTitle:@"Dismiss"
@@ -493,7 +536,7 @@ NSString *const kPhoneNumberSettingsKey = @"phoneNumber";
         return;
     }
     
-    [[UIApplication sharedApplication] openURL:[NSURL URLWithString:@"tel://5103868680"]];
+    [[UIApplication sharedApplication] openURL:[NSURL URLWithString:@"tel:5103868680"]];
     
 }
 
@@ -503,6 +546,8 @@ NSString *const kPhoneNumberSettingsKey = @"phoneNumber";
     [requestPickupButton addTarget:self action:@selector(confirmPickupCancel) forControlEvents:UIControlEventTouchUpInside];
     requestPickupButton.titleLabel.font = [UIFont systemFontOfSize:20];
     [requestPickupButton setTitle:@"Pending driver" forState:UIControlStateNormal];
+    
+    [buttonActivityIndicator startAnimating];
     
     [self monitorStatusAndSwitch:1];
 }
@@ -514,6 +559,8 @@ NSString *const kPhoneNumberSettingsKey = @"phoneNumber";
     requestPickupButton.titleLabel.font = [UIFont systemFontOfSize:20];
     [requestPickupButton setTitle:@"Pickup enroute" forState:UIControlStateNormal];
     
+    [buttonActivityIndicator stopAnimating];
+    
     [self monitorStatusAndSwitch:2];
 }
 
@@ -523,16 +570,18 @@ NSString *const kPhoneNumberSettingsKey = @"phoneNumber";
     [requestPickupButton addTarget:self action:@selector(pickupInactive) forControlEvents:UIControlEventTouchUpInside];
     requestPickupButton.titleLabel.font = [UIFont systemFontOfSize:20];
     [requestPickupButton setTitle:@"Pickup complete" forState:UIControlStateNormal];
+    
+    [buttonActivityIndicator stopAnimating];
 }
 
 - (void)pickupStatusError {
     requestPickupButton.backgroundColor = [UIColor colorWithRed:(201/255.0) green:(48/255.0) blue:(44/255.0) alpha:1.0];
     requestPickupButton.titleLabel.font = [UIFont systemFontOfSize:15];
-    [requestPickupButton setTitle:@"⚡\U0000FE0E Connection error, retrying..." forState:UIControlStateNormal];
+    [requestPickupButton setTitle:@"⚡\U0000FE0E Connection error. Retrying..." forState:UIControlStateNormal];
     [requestPickupButton removeTarget:nil action:NULL forControlEvents:UIControlEventTouchUpInside];
     [mainMapView setUserTrackingMode:MKUserTrackingModeNone];
     
-    [self monitorStatusAndSwitch:-1];
+    [buttonActivityIndicator startAnimating];
 }
 
 - (void)pickupWrongPassword {
@@ -543,6 +592,8 @@ NSString *const kPhoneNumberSettingsKey = @"phoneNumber";
     [mainMapView setUserTrackingMode:MKUserTrackingModeNone];
     
     [self monitorStatusAndSwitch:-2];
+    
+    [buttonActivityIndicator stopAnimating];
 }
 
 - (void)confirmPickupCancel {
@@ -553,6 +604,8 @@ NSString *const kPhoneNumberSettingsKey = @"phoneNumber";
                                    handler:^(UIAlertAction *alertAction) {
                                        requestPickupButton.backgroundColor = [UIColor colorWithRed:(201/255.0) green:(48/255.0) blue:(44/255.0) alpha:1.0];
                                        [requestPickupButton setTitle:@"Canceling" forState:UIControlStateNormal];
+                                       
+                                       [buttonActivityIndicator startAnimating];
                                        
                                        dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_HIGH, 0), ^(void) {
                                            while ([ShipmateNetwork cancelPickup:phoneNumber withSender:self] != YES) {
@@ -578,6 +631,12 @@ NSString *const kPhoneNumberSettingsKey = @"phoneNumber";
 - (void)locationManager:(CLLocationManager *)manager didUpdateLocations:(NSArray<CLLocation *> *)locations {
     if (centeredOnLocation == NO) {
         [mainMapView setRegion:MKCoordinateRegionMake([[locationManager location] coordinate], MKCoordinateSpanMake(0.1, 0.1)) animated:YES];
+        
+        if (vanAnnotations && [vanAnnotations count] > 0) {
+            CLLocationCoordinate2D currentLocation = [[locationManager location] coordinate];
+            [mainMapView setRegion:MKCoordinateRegionMake(currentLocation, MKCoordinateSpanMake(fabs(currentLocation.latitude - ((VanAnnotation *)vanAnnotations[0]).coordinate.latitude) * 2, fabs(currentLocation.longitude - ((VanAnnotation *)vanAnnotations[0]).coordinate.longitude) * 2)) animated:YES];
+        }
+        
         centeredOnLocation = YES;
     }
 }
