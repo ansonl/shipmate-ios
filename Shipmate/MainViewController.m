@@ -118,11 +118,11 @@ NSString *const kPhoneNumberSettingsKey = @"phoneNumber";
                                                                       options:(NSLayoutFormatOptions)0
                                                                       metrics:nil views:dict]];
     
-    [requestPickupButton addConstraints:[NSLayoutConstraint constraintsWithVisualFormat:@"V:|-10-[buttonActivityIndicator]-(>=10)-|"
+    [requestPickupButton addConstraints:[NSLayoutConstraint constraintsWithVisualFormat:@"V:|-[buttonActivityIndicator]-|"
                                                                       options:(NSLayoutFormatOptions)0
                                                                       metrics:nil views:dict]];
     
-    [requestPickupButton addConstraints:[NSLayoutConstraint constraintsWithVisualFormat:@"H:|-10-[buttonActivityIndicator]-(>=10)-|"
+    [requestPickupButton addConstraints:[NSLayoutConstraint constraintsWithVisualFormat:@"H:|-15-[buttonActivityIndicator]-(>=10)-|"
                                                                                 options:(NSLayoutFormatOptions)0
                                                                                 metrics:nil views:dict]];
     //move Apple maps legal agreement up
@@ -459,6 +459,8 @@ NSString *const kPhoneNumberSettingsKey = @"phoneNumber";
     
     [buttonActivityIndicator stopAnimating];
     
+    [changePhoneNumberButton setEnabled:YES];
+    
     centeredOnLocation = NO;
     
     [mainMapView setUserTrackingMode:MKUserTrackingModeNone];
@@ -475,9 +477,11 @@ NSString *const kPhoneNumberSettingsKey = @"phoneNumber";
     
     [mainMapView setUserTrackingMode:MKUserTrackingModeFollow];
     
+    [changePhoneNumberButton setEnabled:NO];
     
-    //Check for phone capability
-    if (![[UIApplication sharedApplication] canOpenURL:[NSURL URLWithString:@"tel:5103868680"]] || UI_USER_INTERFACE_IDIOM() == UIUserInterfaceIdiomPad) {
+    
+    //Check for phone capability or iPad
+    if (![[UIApplication sharedApplication] canOpenURL:[NSURL URLWithString:@"tel:4103205961"]]) {
         UIAlertController *cannotOpenTelAlert = [UIAlertController alertControllerWithTitle:@"Unable to make phone calls right now." message:@"Call Shipmate at 410-320-5961 directly." preferredStyle:UIAlertControllerStyleAlert];
         [cannotOpenTelAlert addAction:[UIAlertAction
                                        actionWithTitle:@"Dismiss"
@@ -526,17 +530,16 @@ NSString *const kPhoneNumberSettingsKey = @"phoneNumber";
      */
     
     //Check for phone capability
-    if (![[UIApplication sharedApplication] canOpenURL:[NSURL URLWithString:@"tel:5103868680"]] || UI_USER_INTERFACE_IDIOM() == UIUserInterfaceIdiomPad) {
-        UIAlertController *cannotOpenTelAlert = [UIAlertController alertControllerWithTitle:@"Unable to make phone calls right now." message:@"Call Shipmate at 410-320-5961 directly." preferredStyle:UIAlertControllerStyleAlert];
+    if (![[UIApplication sharedApplication] canOpenURL:[NSURL URLWithString:@"tel:4103205961"]] || UI_USER_INTERFACE_IDIOM() == UIUserInterfaceIdiomPad) {
+        UIAlertController *cannotOpenTelAlert = [UIAlertController alertControllerWithTitle:@"Phone calls are unsupported on this device. " message:@"Call Shipmate at 410-320-5961 directly to confirm your pickup. " preferredStyle:UIAlertControllerStyleAlert];
         [cannotOpenTelAlert addAction:[UIAlertAction
                                        actionWithTitle:@"Dismiss"
                                        style:UIAlertActionStyleCancel
                                        handler:^(UIAlertAction *alertAction) {}]];
         [self presentViewController:cannotOpenTelAlert animated:YES completion:^(void) {}];
-        return;
     }
     
-    [[UIApplication sharedApplication] openURL:[NSURL URLWithString:@"tel:5103868680"]];
+    [[UIApplication sharedApplication] openURL:[NSURL URLWithString:@"tel:4103205961"]];
     
 }
 
@@ -548,6 +551,8 @@ NSString *const kPhoneNumberSettingsKey = @"phoneNumber";
     [requestPickupButton setTitle:@"Pending driver" forState:UIControlStateNormal];
     
     [buttonActivityIndicator startAnimating];
+    
+    [changePhoneNumberButton setEnabled:NO];
     
     [self monitorStatusAndSwitch:1];
 }
@@ -561,6 +566,8 @@ NSString *const kPhoneNumberSettingsKey = @"phoneNumber";
     
     [buttonActivityIndicator stopAnimating];
     
+    [changePhoneNumberButton setEnabled:NO];
+    
     [self monitorStatusAndSwitch:2];
 }
 
@@ -572,16 +579,20 @@ NSString *const kPhoneNumberSettingsKey = @"phoneNumber";
     [requestPickupButton setTitle:@"Pickup complete" forState:UIControlStateNormal];
     
     [buttonActivityIndicator stopAnimating];
+    
+    [changePhoneNumberButton setEnabled:YES];
 }
 
 - (void)pickupStatusError {
     requestPickupButton.backgroundColor = [UIColor colorWithRed:(201/255.0) green:(48/255.0) blue:(44/255.0) alpha:1.0];
     requestPickupButton.titleLabel.font = [UIFont systemFontOfSize:15];
-    [requestPickupButton setTitle:@"⚡\U0000FE0E Connection error. Retrying..." forState:UIControlStateNormal];
+    [requestPickupButton setTitle:@"⚡\U0000FE0E Connection error." forState:UIControlStateNormal];
     [requestPickupButton removeTarget:nil action:NULL forControlEvents:UIControlEventTouchUpInside];
     [mainMapView setUserTrackingMode:MKUserTrackingModeNone];
     
     [buttonActivityIndicator startAnimating];
+    
+    [changePhoneNumberButton setEnabled:YES];
 }
 
 - (void)pickupWrongPassword {
@@ -590,6 +601,8 @@ NSString *const kPhoneNumberSettingsKey = @"phoneNumber";
     [requestPickupButton setTitle:@"\u1f6ab\U0000FE0E Phone number in use by someone else, use another phone number. " forState:UIControlStateNormal];
     [requestPickupButton removeTarget:nil action:NULL forControlEvents:UIControlEventTouchUpInside];
     [mainMapView setUserTrackingMode:MKUserTrackingModeNone];
+    
+    [changePhoneNumberButton setEnabled:YES];
     
     [self monitorStatusAndSwitch:-2];
     

@@ -10,7 +10,7 @@
 
 @implementation ShipmateNetwork 
 
-NSString *const kBaseServer = @"http://192.168.1.167:8080";
+NSString *const kBaseServer = @"https://navy-shipmate.herokuapp.com";
 NSString *const kNewPickup = @"/newPickup";
 NSString *const kGetPickupInfo = @"/getPickupInfo";
 NSString *const kCancelPickup = @"/cancelPickup";
