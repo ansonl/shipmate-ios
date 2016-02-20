@@ -373,7 +373,7 @@ NSString *const kPhoneNumberSettingsKey = @"phoneNumber";
         int newStatus = [ShipmateNetwork getPickupInfo:phoneNumber withLocation:currentPoint withSender:self];
         
         //loop and wait for status change
-        while (currentStatus == newStatus) {
+        while (currentStatus == newStatus || newStatus == -1) { //check for fail status the first time, too due to database being slow, pickup row might not be created yet
             usleep(5000000); //check every 5 seconds
             newStatus = [ShipmateNetwork getPickupInfo:phoneNumber withLocation:currentPoint withSender:self];
             
@@ -481,6 +481,7 @@ NSString *const kPhoneNumberSettingsKey = @"phoneNumber";
     
     
     //Check for phone capability or iPad
+    /*
     if (![[UIApplication sharedApplication] canOpenURL:[NSURL URLWithString:@"tel:4103205961"]]) {
         UIAlertController *cannotOpenTelAlert = [UIAlertController alertControllerWithTitle:@"Unable to make phone calls right now." message:@"Call Shipmate at 410-320-5961 directly." preferredStyle:UIAlertControllerStyleAlert];
         [cannotOpenTelAlert addAction:[UIAlertAction
@@ -491,6 +492,7 @@ NSString *const kPhoneNumberSettingsKey = @"phoneNumber";
         [self pickupInactive];
         return;
     }
+     */
 
     dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_HIGH, 0), ^(void) {
         CLLocationCoordinate2D currentLocation = [[locationManager location] coordinate];

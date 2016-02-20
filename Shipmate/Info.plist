@@ -28,7 +28,7 @@
 		<true/>
 	</dict>
 	<key>NSLocationAlwaysUsageDescription</key>
-	<string>Let SHIPMATE get your location when requesting a pickup and if you switch to use another app while waiting.</string>
+	<string>Let SHIPMATE get your location in the foreground and background when requesting a pickup. </string>
 	<key>NSLocationUsageDescription</key>
 	<string>Let SHIPMATE get your location when requesting a pickup.</string>
 	<key>UILaunchStoryboardName</key>
