@@ -1,9 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="9531" systemVersion="15C50" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" launchScreen="YES" useTraitCollections="YES" initialViewController="01J-lp-oVM">
+<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="9532" systemVersion="15C50" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" launchScreen="YES" useTraitCollections="YES" initialViewController="01J-lp-oVM">
     <dependencies>
         <deployment identifier="iOS"/>
-        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="9529"/>
-        <capability name="Constraints to layout margins" minToolsVersion="6.0"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="9530"/>
     </dependencies>
     <scenes>
         <!--View Controller-->
@@ -18,26 +17,21 @@
                         <rect key="frame" x="0.0" y="0.0" width="600" height="600"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <subviews>
-                            <imageView userInteractionEnabled="NO" contentMode="scaleAspectFill" horizontalHuggingPriority="251" verticalHuggingPriority="251" image="navyDigital" translatesAutoresizingMaskIntoConstraints="NO" id="3ZC-yB-6BM">
-                                <rect key="frame" x="0.0" y="0.0" width="600" height="600"/>
-                                <color key="backgroundColor" white="0.0" alpha="1" colorSpace="calibratedWhite"/>
-                            </imageView>
                             <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="SHIPMATE" textAlignment="center" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="nOx-HP-rzC">
-                                <rect key="frame" x="0.0" y="264" width="600" height="72"/>
+                                <rect key="frame" x="148" y="264" width="304" height="72"/>
                                 <fontDescription key="fontDescription" type="system" weight="heavy" pointSize="60"/>
-                                <color key="textColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
                                 <nil key="highlightedColor"/>
                             </label>
+                            <imageView userInteractionEnabled="NO" contentMode="scaleAspectFill" horizontalHuggingPriority="251" verticalHuggingPriority="251" image="ShipmateLogo" translatesAutoresizingMaskIntoConstraints="NO" id="3ZC-yB-6BM">
+                                <rect key="frame" x="236" y="128" width="128" height="128"/>
+                            </imageView>
                         </subviews>
                         <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="calibratedWhite"/>
                         <constraints>
-                            <constraint firstAttribute="trailingMargin" secondItem="3ZC-yB-6BM" secondAttribute="trailing" constant="-20" id="3Yk-rS-2Ak"/>
-                            <constraint firstAttribute="trailingMargin" secondItem="nOx-HP-rzC" secondAttribute="trailing" constant="-20" id="Cc6-Yj-Oy3"/>
-                            <constraint firstItem="nOx-HP-rzC" firstAttribute="leading" secondItem="Ze5-6b-2t3" secondAttribute="leadingMargin" constant="-20" id="Qz1-Z1-npB"/>
-                            <constraint firstItem="xb3-aO-Qok" firstAttribute="top" secondItem="3ZC-yB-6BM" secondAttribute="bottom" id="UFQ-VM-7ou"/>
-                            <constraint firstItem="3ZC-yB-6BM" firstAttribute="leading" secondItem="Ze5-6b-2t3" secondAttribute="leadingMargin" constant="-20" id="WyS-pi-BdK"/>
-                            <constraint firstItem="3ZC-yB-6BM" firstAttribute="top" secondItem="Llm-lL-Icb" secondAttribute="bottom" constant="-20" id="beh-hf-aoW"/>
-                            <constraint firstItem="nOx-HP-rzC" firstAttribute="centerY" secondItem="Ze5-6b-2t3" secondAttribute="centerY" id="fxh-Fv-Tqz"/>
+                            <constraint firstItem="nOx-HP-rzC" firstAttribute="centerY" secondItem="Ze5-6b-2t3" secondAttribute="centerY" id="2lK-UH-XvO"/>
+                            <constraint firstItem="3ZC-yB-6BM" firstAttribute="centerX" secondItem="Ze5-6b-2t3" secondAttribute="centerX" id="CVw-a5-Y5A"/>
+                            <constraint firstItem="nOx-HP-rzC" firstAttribute="centerX" secondItem="Ze5-6b-2t3" secondAttribute="centerX" id="IaJ-cf-mlX"/>
+                            <constraint firstItem="nOx-HP-rzC" firstAttribute="top" secondItem="3ZC-yB-6BM" secondAttribute="bottom" constant="8" id="eth-rM-S5y"/>
                         </constraints>
                     </view>
                 </viewController>
@@ -47,6 +41,6 @@
         </scene>
     </scenes>
     <resources>
-        <image name="navyDigital" width="1024" height="1024"/>
+        <image name="ShipmateLogo" width="128" height="128"/>
     </resources>
 </document>

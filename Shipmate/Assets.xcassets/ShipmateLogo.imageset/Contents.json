@@ -2,17 +2,17 @@
   "images" : [
     {
       "idiom" : "universal",
-      "filename" : "navyDigitalBlurred.png",
+      "filename" : "ShipmateLogo128.png",
       "scale" : "1x"
     },
     {
       "idiom" : "universal",
-      "filename" : "navyDigitalBlurred@2x.png",
+      "filename" : "ShipmateLogo128@2x.png",
       "scale" : "2x"
     },
     {
       "idiom" : "universal",
-      "filename" : "navyDigitalBlurred@3x-min.png",
+      "filename" : "ShipmateLogo128@3x.png",
       "scale" : "3x"
     }
   ],

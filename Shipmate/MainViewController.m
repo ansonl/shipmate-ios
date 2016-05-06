@@ -30,6 +30,7 @@
 
 BOOL centeredOnLocation = NO;
 BOOL rideCancelled = NO;
+BOOL pickupOutOfRange = NO;
 
 UIAlertAction *phoneNumberSaveAction;
 
@@ -76,6 +77,9 @@ NSString *const kPhoneNumberSettingsKey = @"phoneNumber";
     changePhoneNumberButton.titleLabel.font = [UIFont systemFontOfSize:15];
     [changePhoneNumberButton setTitle:@"\u2699\U0000FE0E Change Number" forState:UIControlStateNormal];
     [changePhoneNumberButton setTitleColor:[UIColor whiteColor] forState:UIControlStateNormal];
+    [changePhoneNumberButton setTitle:@"\u2699\U0000FE0E Pickup In Progress" forState:UIControlStateDisabled];
+    [changePhoneNumberButton setTitleColor:[UIColor grayColor] forState:UIControlStateDisabled];
+    
     changePhoneNumberButton.backgroundColor = [UIColor colorWithRed:(0/255.0) green:(0/255.0) blue:(0/255.0) alpha:0.8];
     [changePhoneNumberButton addTarget:self action:@selector(changePhoneNumber) forControlEvents:UIControlEventTouchUpInside];
     
@@ -144,6 +148,14 @@ NSString *const kPhoneNumberSettingsKey = @"phoneNumber";
     locationManager = [[CLLocationManager alloc] init];
     [locationManager setDelegate:self];
     [self setupForLocation];
+    
+    UIAlertController *instructionAlert = [UIAlertController alertControllerWithTitle:@"Instructions" message:@"When you request a ride, a phone call to the SHIPMATE duty phone will be started. Just say hey to the drivers so that they can verify that you are a real person and legitimate request.\nSHIPMATE drivers will match your location using the phone number that you call from." preferredStyle:UIAlertControllerStyleAlert];
+    UIAlertAction* okayAction = [UIAlertAction actionWithTitle:@"Okay"
+                                                     style:UIAlertActionStyleDefault
+                                                   handler:nil];
+    [instructionAlert addAction:okayAction];
+    [self presentViewController:instructionAlert animated:YES completion:nil];
+
 }
 
 - (NSString *)getPhoneNumber {
@@ -467,6 +479,23 @@ NSString *const kPhoneNumberSettingsKey = @"phoneNumber";
 }
 
 - (void)pickupRequested:(UIButton *)sender {
+    if ([[locationManager location]distanceFromLocation:[[CLLocation alloc] initWithLatitude:38.9821 longitude:-76.4839] ] > 80500) {
+        UIAlertController *cannotOpenTelAlert = [UIAlertController alertControllerWithTitle:@"Shipmate unavailable." message:@"Shipmate is out of range in your region right now.\n\nCall Shipmate at 410-320-5961 directly?" preferredStyle:UIAlertControllerStyleAlert];
+        [cannotOpenTelAlert addAction:[UIAlertAction
+                                       actionWithTitle:@"Call"
+                                       style:UIAlertActionStyleDefault
+                                       handler:^(UIAlertAction *alertAction) {
+                                           [self callShipmate];
+                                       }]];
+        [cannotOpenTelAlert addAction:[UIAlertAction
+                                       actionWithTitle:@"Dismiss"
+                                       style:UIAlertActionStyleCancel
+                                       handler:^(UIAlertAction *alertAction) {}]];
+        [self presentViewController:cannotOpenTelAlert animated:YES completion:^(void) {}];
+        [self pickupInactive];
+        return;
+    }
+    
     [requestPickupButton removeTarget:nil action:NULL forControlEvents:UIControlEventTouchUpInside];
     [requestPickupButton addTarget:self action:@selector(confirmPickupCancel) forControlEvents:UIControlEventTouchUpInside];
     requestPickupButton.titleLabel.font = [UIFont systemFontOfSize:20];
@@ -608,6 +637,17 @@ NSString *const kPhoneNumberSettingsKey = @"phoneNumber";
     
     [self monitorStatusAndSwitch:-2];
     
+    [buttonActivityIndicator stopAnimating];
+}
+
+- (void)pickupOutOfRange {
+    requestPickupButton.backgroundColor = [UIColor colorWithRed:(201/255.0) green:(48/255.0) blue:(44/255.0) alpha:1.0];
+    requestPickupButton.titleLabel.font = [UIFont systemFontOfSize:12];
+    [requestPickupButton setTitle:@"SHIPMATE unavailable in your region" forState:UIControlStateNormal];
+    [requestPickupButton removeTarget:nil action:NULL forControlEvents:UIControlEventTouchUpInside];
+    [mainMapView setUserTrackingMode:MKUserTrackingModeNone];
+    
+    [changePhoneNumberButton setEnabled:YES];
     [buttonActivityIndicator stopAnimating];
 }
 

@@ -130,6 +130,9 @@
 						CreatedOnToolsVersion = 7.2;
 						DevelopmentTeam = 3E2UWZ76C2;
 						SystemCapabilities = {
+							com.apple.BackgroundModes = {
+								enabled = 1;
+							};
 							com.apple.Maps.iOS = {
 								enabled = 1;
 							};
@@ -292,7 +295,7 @@
 				INFOPLIST_FILE = Shipmate/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 8.1;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
-				PRODUCT_BUNDLE_IDENTIFIER = com.ansonliu.Shipmate;
+				PRODUCT_BUNDLE_IDENTIFIER = com.ansonliu.shipmate;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE = "";
 				TARGETED_DEVICE_FAMILY = "1,2";
@@ -308,7 +311,7 @@
 				INFOPLIST_FILE = Shipmate/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 8.1;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
-				PRODUCT_BUNDLE_IDENTIFIER = com.ansonliu.Shipmate;
+				PRODUCT_BUNDLE_IDENTIFIER = com.ansonliu.shipmate;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE = "";
 				TARGETED_DEVICE_FAMILY = "1,2";
